@@ -30,10 +30,11 @@ async function run() {
             const carCategory = req.query.carCategory;
             console.log(carCategory)
             const query = {};
-            const options = await CarsCetagoryCollection.find(query).limit(3).toArray();
+            const options = await CarsCetagoryCollection.find(query).toArray();
 
           res.send(options)
         });
+
 
         app.get('/category', async(req, res) =>{
             const query = {};
@@ -47,6 +48,8 @@ async function run() {
             const service = await CarsCetagoryCollection.find(query).toArray();
             res.send(service)
         });
+       
+       
         
     }
     finally {
