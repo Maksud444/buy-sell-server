@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, Collection, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -17,23 +18,96 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 
+function verifyJWT(req, res, next) {
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('unauthorized access')
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
 
 async function run() {
     try {
         const CarsCetagoryCollection = client.db('CarsPortal').collection('CarsCollection');
         const ordersCollection = client.db('CarsPortal').collection('orders');
         const CetagoryCollection = client.db('CarsPortal').collection('Category');
+        const usersCollection = client.db('CarsPortal').collection('users');
          
 
 
         app.get('/CarsCollection', async (req, res) => {
-            const carCategory = req.query.carCategory;
-            console.log(carCategory)
+            const categoryName = req.query.categoryName;
             const query = {};
             const options = await CarsCetagoryCollection.find(query).toArray();
 
+
+            const categoryQuery = {categoryName: categoryName}
+            const alreadyBooked = await CetagoryCollection.find(categoryQuery).toArray();
+            options.forEach(option =>{
+                const optionBooked = alreadyBooked.filter(book => book.categoryName === option.categoryName);
+               const remainingCategory = option.categoryName.filter(ctName => !optionBooked.includes(ctName))
+               option.categoryName = remainingCategory; 
+               console.log(optionBooked,remainingCategory.length)
+            })
+
           res.send(options)
         });
+
+        app.get('/v2/category', async(req, res) =>{
+            const name = req.query.name;
+            const options = await CarsCetagoryCollection.aggregate([
+                {
+                    $lookup:{
+                        from: 'Category',
+                        localField: 'name',
+                        foreignField: 'categoryName',
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ['$categoryName', name]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'booked'
+                    }
+                },
+                {
+                    $project:{
+                        name: 1,
+                        categoryName:1,
+                        booked:{
+                            $map:{
+                                input: '$booked',
+                                as: 'book',
+                                in: '$$book.ctName'
+                            }
+                        }
+                    }
+                },
+                {
+                    $project:{
+                        name: 1,
+                        categoryName: {
+                            $setDifference: ['$ctName', '$booked']
+                        }
+                    }
+                }
+            ]).toArray();
+            res.send(options);
+        })
 
 
         app.get('/category', async(req, res) =>{
@@ -49,11 +123,25 @@ async function run() {
             res.send(service)
         });
        
-        app.get('/orders', async(req, res) =>{
-            const query = {};
-            const cursor = await ordersCollection.find(query).toArray();
-            res.send(cursor);
-        });
+      
+        app.get('/orders', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            const query = { email: email };
+            const orders = await ordersCollection.find(query).toArray();
+            res.send(orders)
+        })
+
+        // app.get('/orders', async(req, res) =>{
+        //     const query = {};
+        //     const cursor = await ordersCollection.find(query).toArray();
+        //     res.send(cursor);
+        // });
 
         app.post('/orders', async(req, res) =>{
         const orders = req.body;
@@ -61,6 +149,31 @@ async function run() {
         res.send(result);
         });
        
+        app.get('/users', async (req, res) => {
+            const query = {};
+            console.log(query)
+            const users = await usersCollection.find(query).toArray();
+            console.log(users);
+            res.send(users);
+        });
+
+
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' })
+        })
+
+        app.post('/users', async(req, res) =>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
         
     }
     finally {
