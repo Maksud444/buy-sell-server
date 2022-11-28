@@ -44,7 +44,9 @@ async function run() {
         const ordersCollection = client.db('CarsPortal').collection('orders');
         const CetagoryCollection = client.db('CarsPortal').collection('Category');
         const usersCollection = client.db('CarsPortal').collection('users');
-        // const productsCollection = client.db('CarsPortal').collection('product');
+        const paymentsCollection = client.db('CarsPortal').collection('payments');
+        const advertiseCollection = client.db('CarsPortal').collection('advertise');
+        
 
 
         app.get('/CarsCollection', async (req, res) => {
@@ -122,7 +124,6 @@ async function run() {
          app.get('/allcar/:id', async (req, res) => {
             const id = req.params.id;
             const query = { categoryId:id };
-            console.log(query);
             const service = await CarsCetagoryCollection.find(query).toArray();
             res.send(service)
         });
@@ -144,11 +145,28 @@ async function run() {
         app.get('/myproduct', async (req, res) => {
             const email = req.query.email;
             const query = {email: email};
-            console.log(query);
             const result = await CarsCetagoryCollection.find(query).toArray();
             res.send(result);
         })
   
+       // advataise................
+
+       app.get('/advertise', async (req, res) => {
+        const email = req.query.email;
+        const query = {email: email};
+        console.log(query);
+        const result = await CarsCetagoryCollection.find(query).toArray();
+        res.send(result);
+    })
+
+
+        app.post('/advertise', async(req, res) =>{
+        const orders = req.body;
+        const result = await advertiseCollection.insertOne(orders);
+        res.send(result);
+        });
+
+
 
         //----------//
        
@@ -156,7 +174,7 @@ async function run() {
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
-            const result = await productsCollection.deleteOne(filter);
+            const result = await CarsCetagoryCollection.deleteOne(filter);
             res.send(result)
         })
        
@@ -195,7 +213,7 @@ async function run() {
        
         app.get('/users', async (req, res) => {
             const query = {};
-            console.log(query)
+            // console.log(query)
             const users = await usersCollection.find(query).toArray();
             // console.log(users);
             res.send(users);
@@ -286,6 +304,21 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
               });
 
+        });
+
+        app.post('/payments', async (req, res) =>{
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.orderId
+            const filter = {_id: ObjectId(id)}
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResult = await ordersCollection.updateOne(filter, updatedDoc)
+            res.send(result);
         })
         
 
