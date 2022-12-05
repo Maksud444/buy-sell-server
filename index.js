@@ -67,50 +67,50 @@ async function run() {
           res.send(options)
         });
 
-        app.get('/v2/category', async(req, res) =>{
-            const name = req.query.name;
-            const options = await CarsCetagoryCollection.aggregate([
-                {
-                    $lookup:{
-                        from: 'Category',
-                        localField: 'name',
-                        foreignField: 'categoryName',
-                        pipeline: [
-                            {
-                                $match: {
-                                    $expr: {
-                                        $eq: ['$categoryName', name]
-                                    }
-                                }
-                            }
-                        ],
-                        as: 'booked'
-                    }
-                },
-                {
-                    $project:{
-                        name: 1,
-                        categoryName:1,
-                        booked:{
-                            $map:{
-                                input: '$booked',
-                                as: 'book',
-                                in: '$$book.ctName'
-                            }
-                        }
-                    }
-                },
-                {
-                    $project:{
-                        name: 1,
-                        categoryName: {
-                            $setDifference: ['$ctName', '$booked']
-                        }
-                    }
-                }
-            ]).toArray();
-            res.send(options);
-        })
+        // app.get('/v2/category', async(req, res) =>{
+        //     const name = req.query.name;
+        //     const options = await CarsCetagoryCollection.aggregate([
+        //         {
+        //             $lookup:{
+        //                 from: 'Category',
+        //                 localField: 'name',
+        //                 foreignField: 'categoryName',
+        //                 pipeline: [
+        //                     {
+        //                         $match: {
+        //                             $expr: {
+        //                                 $eq: ['$categoryName', name]
+        //                             }
+        //                         }
+        //                     }
+        //                 ],
+        //                 as: 'booked'
+        //             }
+        //         },
+        //         {
+        //             $project:{
+        //                 name: 1,
+        //                 categoryName:1,
+        //                 booked:{
+        //                     $map:{
+        //                         input: '$booked',
+        //                         as: 'book',
+        //                         in: '$$book.ctName'
+        //                     }
+        //                 }
+        //             }
+        //         },
+        //         {
+        //             $project:{
+        //                 name: 1,
+        //                 categoryName: {
+        //                     $setDifference: ['$ctName', '$booked']
+        //                 }
+        //             }
+        //         }
+        //     ]).toArray();
+        //     res.send(options);
+        // })
 
 
         app.get('/category', async(req, res) =>{
