@@ -321,7 +321,26 @@ async function run() {
             res.send(result);
         })
         
-
+      //set advertisement product from seller 
+      app.put('/advertise/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                status: 'advertise'
+            } 
+        }
+        const result = await CarsCetagoryCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    })
+    //display the advertisement product on home 
+    app.get('/advertise', async (req, res) => {
+        const filter = req.query.status;
+        const query = { status: filter }
+        const result = await CarsCetagoryCollection.find(query).toArray()
+        res.send(result)
+    })
 
         
     }
