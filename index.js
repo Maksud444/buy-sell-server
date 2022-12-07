@@ -45,7 +45,7 @@ async function run() {
         const CetagoryCollection = client.db('CarsPortal').collection('Category');
         const usersCollection = client.db('CarsPortal').collection('users');
         const paymentsCollection = client.db('CarsPortal').collection('payments');
-        const advertiseCollection = client.db('CarsPortal').collection('advertise');
+
         
 
 
@@ -67,51 +67,8 @@ async function run() {
           res.send(options)
         });
 
-        // app.get('/v2/category', async(req, res) =>{
-        //     const name = req.query.name;
-        //     const options = await CarsCetagoryCollection.aggregate([
-        //         {
-        //             $lookup:{
-        //                 from: 'Category',
-        //                 localField: 'name',
-        //                 foreignField: 'categoryName',
-        //                 pipeline: [
-        //                     {
-        //                         $match: {
-        //                             $expr: {
-        //                                 $eq: ['$categoryName', name]
-        //                             }
-        //                         }
-        //                     }
-        //                 ],
-        //                 as: 'booked'
-        //             }
-        //         },
-        //         {
-        //             $project:{
-        //                 name: 1,
-        //                 categoryName:1,
-        //                 booked:{
-        //                     $map:{
-        //                         input: '$booked',
-        //                         as: 'book',
-        //                         in: '$$book.ctName'
-        //                     }
-        //                 }
-        //             }
-        //         },
-        //         {
-        //             $project:{
-        //                 name: 1,
-        //                 categoryName: {
-        //                     $setDifference: ['$ctName', '$booked']
-        //                 }
-        //             }
-        //         }
-        //     ]).toArray();
-        //     res.send(options);
+       
         // })
-
 
         app.get('/category', async(req, res) =>{
             const query = {};
@@ -128,11 +85,7 @@ async function run() {
             res.send(service)
         });
 
-        // app.get('/addProduct', async (req, res) => {
-        //     const query = {};
-        //     const result = await CetagoryCollection.find(query).project({ name: 1 }).toArray();
-        //     res.send(result)
-        // })
+    
 
         // add car.........
          app.put('/addcar', async(req, res) =>{
@@ -149,22 +102,8 @@ async function run() {
             res.send(result);
         })
   
-       // advataise................
+  
 
-       app.get('/advertise', async (req, res) => {
-        const email = req.query.email;
-        const query = {email: email};
-        console.log(query);
-        const result = await CarsCetagoryCollection.find(query).toArray();
-        res.send(result);
-    })
-
-
-        app.post('/advertise', async(req, res) =>{
-        const orders = req.body;
-        const result = await advertiseCollection.insertOne(orders);
-        res.send(result);
-        });
 
 
 
@@ -192,12 +131,7 @@ async function run() {
             res.send(orders)
         })
 
-    //    app.get('/orders/:id', async(req, res) =>{
-    //     const id = req.params.id;
-    //     const query = {_id: ObjectId(id)}
-    //     const order = ordersCollection.findOne(query)
-    //     res.send(order);
-    //    })
+    //  
     app.get('/orders/:id', async (req, res) => {
         const id = req.params.id;
         const query = { _id: ObjectId(id) };
